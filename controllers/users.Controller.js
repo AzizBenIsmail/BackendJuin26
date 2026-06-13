@@ -1,4 +1,6 @@
 const UserModel = require('../models/user.Model');
+const { notifyUserCreation } = require('../utils/discord.notification');
+const { sendWelcomeEmail, sendAdminNotificationEmail } = require('../utils/email.service');
 
 // CREATE - Créer un nouvel utilisateur
 module.exports.createUser = async (req, res) => {
@@ -30,6 +32,16 @@ module.exports.createUser = async (req, res) => {
     });
 
     const savedUser = await newUser.save();
+    
+    // Envoyer une notification Discord
+    await notifyUserCreation(savedUser);
+    
+    // Envoyer un email de bienvenue à l'utilisateur
+    await sendWelcomeEmail(savedUser.email, savedUser.firstname);
+    
+    // Envoyer une notification par email à l'administrateur
+    await sendAdminNotificationEmail(savedUser);
+    
     res.status(201).json({ message: 'User created successfully', data: savedUser });
   } catch (error) {
     res.status(500).json({ error: error.message });
