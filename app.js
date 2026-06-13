@@ -5,6 +5,10 @@ var cookieParser = require('cookie-parser');
 var logger = require('morgan');
 const http = require('http');
 
+require('dotenv').config();
+
+const { connectToDb } = require('./config/connectToDb');
+
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
 
@@ -36,6 +40,7 @@ app.use(function(err, req, res, next) {
 });
 
 const server = http.createServer(app);
-server.listen(5000, () => {
-  console.log('Server is running on port 5000');
+server.listen(process.env.Port, () => {
+  connectToDb();
+  console.log(`Server is running on port ${process.env.Port}`);
 });
