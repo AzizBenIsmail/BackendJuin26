@@ -1,4 +1,4 @@
-const usersService = require('../services/users.service');
+const UserModel = require('../models/user.Model');
 
 // CREATE - Créer un nouvel utilisateur
 module.exports.createUser = async (req, res) => {
@@ -10,7 +10,13 @@ module.exports.createUser = async (req, res) => {
       return res.status(400).json({ error: 'email and password are required' });
     }
 
-    const newUser = await usersService.createUser({
+    // Récupérer le chemin de l'image si elle existe
+    let profileImage = null;
+    if (req.file) {
+      profileImage = `/images/${req.file.filename}`;
+    }
+
+    const newUser = new UserModel({
       firstname,
       lastname,
       email,
@@ -20,9 +26,11 @@ module.exports.createUser = async (req, res) => {
       address,
       city,
       country,
+      profileImage,
     });
 
-    res.status(201).json({ message: 'User created successfully', data: newUser });
+    const savedUser = await newUser.save();
+    res.status(201).json({ message: 'User created successfully', data: savedUser });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -31,7 +39,7 @@ module.exports.createUser = async (req, res) => {
 // READ - Récupérer tous les utilisateurs
 module.exports.getAllUsers = async (req, res) => {
   try {
-    const users = await usersService.getAllUsers();
+    const users = await UserModel.find().select('-password');
     res.status(200).json({ data: users });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -42,7 +50,7 @@ module.exports.getAllUsers = async (req, res) => {
 module.exports.getUserById = async (req, res) => {
   try {
     const { id } = req.params;
-    const user = await usersService.getUserById(id);
+    const user = await UserModel.findById(id).select('-password');
 
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
@@ -60,7 +68,16 @@ module.exports.updateUser = async (req, res) => {
     const { id } = req.params;
     const updateData = req.body;
 
-    const updatedUser = await usersService.updateUser(id, updateData);
+    // Si une nouvelle image est uploadée, ajouter son chemin
+    if (req.file) {
+      updateData.profileImage = `/images/${req.file.filename}`;
+    }
+
+    const updatedUser = await UserModel.findByIdAndUpdate(
+      id,
+      updateData,
+      { new: true, runValidators: true }
+    ).select('-password');
 
     if (!updatedUser) {
       return res.status(404).json({ error: 'User not found' });
@@ -76,7 +93,7 @@ module.exports.updateUser = async (req, res) => {
 module.exports.deleteUser = async (req, res) => {
   try {
     const { id } = req.params;
-    const deletedUser = await usersService.deleteUser(id);
+    const deletedUser = await UserModel.findByIdAndDelete(id);
 
     if (!deletedUser) {
       return res.status(404).json({ error: 'User not found' });
