@@ -5,7 +5,9 @@
   "scripts": {
     "start": "node app.js",
     "dev": "nodemon app.js",
-    "seed": "node seeders/users.seeder.js"
+    "seed": "node seeders/users.seeder.js",
+    "seed:cars": "node seeders/cars.seeder.js",
+    "seed:all": "npm run seed && npm run seed:cars"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",

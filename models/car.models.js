@@ -78,6 +78,11 @@ const carSchema = new mongoose.Schema(
         default: null,
       },
     },
+    proprietaire: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      default: null,
+    },
   },
   {
     timestamps: true,

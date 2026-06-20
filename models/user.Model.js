@@ -75,6 +75,16 @@ userSchema.pre("save", async function () {
   }
 });
 
+// Virtual populate pour récupérer les voitures de l'utilisateur
+userSchema.virtual("cars", {
+  ref: "Car",
+  localField: "_id",
+  foreignField: "proprietaire",
+});
+
+// Permettre la population virtuelle lors de toJSON
+userSchema.set("toJSON", { virtuals: true });
+
 // Éviter la recréation du modèle
 const User = mongoose.model("User", userSchema);
 module.exports = User;
