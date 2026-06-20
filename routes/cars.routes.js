@@ -18,6 +18,9 @@ router.get('/search', carsController.searchCars);
 // READ - Récupérer une voiture par ID
 router.get('/:id', carsController.getCarById);
 
+// QRCODE - Générer un QR code pour une voiture
+router.get('/:id/qrcode', carsController.generateCarQRCode);
+
 // UPDATE - Mettre à jour une voiture
 router.put('/:id', carsController.updateCar);
 

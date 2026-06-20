@@ -1,5 +1,6 @@
 const CarModel = require('../models/car.models');
 const UserModel = require('../models/user.Model');
+const QRCode = require('qrcode');
 
 // CREATE - Créer une nouvelle voiture
 module.exports.createCar = async (req, res) => {
@@ -281,6 +282,77 @@ module.exports.sellCar = async (req, res) => {
       message: 'Voiture vendue avec succès',
       data: updatedCar,
     });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// QRCODE - Générer un QR code pour une voiture
+module.exports.generateCarQRCode = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { format = 'image' } = req.query; // 'image' ou 'json'
+
+    // Vérifier que la voiture existe
+    const car = await CarModel.findById(id).populate('proprietaire', 'firstname lastname email');
+
+    if (!car) {
+      return res.status(404).json({ error: 'Voiture non trouvée' });
+    }
+
+    // Préparer les données de la voiture pour le QR code
+    const carData = {
+      id: car._id,
+      marque: car.marque,
+      modele: car.modele,
+      annee: car.annee,
+      prix: car.prix,
+      couleur: car.couleur,
+      immatriculation: car.immatriculation,
+      kilometrage: car.kilometrage,
+      typeCarburant: car.typeCarburant,
+      typeTransmission: car.typeTransmission,
+      nombrePlaces: car.nombrePlaces,
+      statut: car.statut,
+      proprietaire: car.proprietaire ? {
+        id: car.proprietaire._id,
+        name: `${car.proprietaire.firstname} ${car.proprietaire.lastname}`,
+        email: car.proprietaire.email,
+      } : null,
+      createdAt: car.createdAt,
+    };
+
+    const qrCodeData = JSON.stringify(carData);
+
+    if (format === 'json') {
+      // Retourner en format JSON avec data URL
+      const dataUrl = await QRCode.toDataURL(qrCodeData, {
+        errorCorrectionLevel: 'H',
+        type: 'image/png',
+        quality: 0.95,
+        margin: 1,
+        width: 300,
+      });
+
+      return res.status(200).json({
+        success: true,
+        message: 'QR code généré avec succès',
+        carData: carData,
+        qrCode: dataUrl,
+      });
+    } else {
+      // Retourner en format image PNG
+      const qrImage = await QRCode.toBuffer(qrCodeData, {
+        errorCorrectionLevel: 'H',
+        type: 'image/png',
+        quality: 0.95,
+        margin: 1,
+        width: 300,
+      });
+
+      res.type('image/png');
+      res.send(qrImage);
+    }
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
