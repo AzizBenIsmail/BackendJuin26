@@ -62,6 +62,12 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
+    carsOwned: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Car",
+      },
+    ],
   },
   { timestamps: true }, // Ajoute createdAt et updatedAt automatiquement
 );

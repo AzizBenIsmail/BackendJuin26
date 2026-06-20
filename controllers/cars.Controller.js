@@ -1,4 +1,5 @@
 const CarModel = require('../models/car.models');
+const UserModel = require('../models/user.Model');
 
 // CREATE - Créer une nouvelle voiture
 module.exports.createCar = async (req, res) => {
@@ -172,6 +173,114 @@ module.exports.getAvailableCars = async (req, res) => {
   try {
     const cars = await CarModel.find({ statut: 'disponible' });
     res.status(200).json({ data: cars });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// BUY - Acheter une voiture (l'assigner à un utilisateur)
+module.exports.buyCar = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { userId } = req.body;
+
+    // Validation
+    if (!userId) {
+      return res.status(400).json({
+        error: 'userId est requis pour acheter une voiture',
+      });
+    }
+
+    // Vérifier que la voiture existe et est disponible
+    const car = await CarModel.findById(id);
+
+    if (!car) {
+      return res.status(404).json({ error: 'Voiture non trouvée' });
+    }
+
+    if (car.statut !== 'disponible') {
+      return res.status(400).json({
+        error: `Cette voiture n'est pas disponible. Statut actuel: ${car.statut}`,
+      });
+    }
+
+    // Vérifier que l'utilisateur existe
+    const user = await UserModel.findById(userId);
+    if (!user) {
+      return res.status(404).json({ error: 'Utilisateur non trouvé' });
+    }
+
+    // Mettre à jour la voiture: assigner le propriétaire et changer le statut
+    const updatedCar = await CarModel.findByIdAndUpdate(
+      id,
+      {
+        proprietaire: userId,
+        statut: 'réservée',
+      },
+      { new: true }
+    ).populate('proprietaire');
+
+    // Ajouter la voiture à carsOwned de l'utilisateur
+    await UserModel.findByIdAndUpdate(
+      userId,
+      {
+        $push: { carsOwned: id }
+      },
+      { new: true }
+    );
+
+    res.status(200).json({
+      message: 'Voiture achetée avec succès',
+      data: updatedCar,
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// SELL - Vendre une voiture (retirer le propriétaire et marquer comme vendue)
+module.exports.sellCar = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { userId } = req.body;
+
+    // Vérifier que la voiture existe
+    const car = await CarModel.findById(id);
+
+    if (!car) {
+      return res.status(404).json({ error: 'Voiture non trouvée' });
+    }
+
+    // Vérifier que la voiture appartient au propriétaire
+    if (car.proprietaire?.toString() !== userId) {
+      return res.status(403).json({
+        error: 'Vous ne pouvez vendre que votre propre voiture',
+      });
+    }
+
+    // Mettre à jour la voiture: retirer le propriétaire et changer le statut
+    const updatedCar = await CarModel.findByIdAndUpdate(
+      id,
+      {
+        proprietaire: null,
+        statut: 'vendue',
+      },
+      { new: true }
+    );
+
+    // Retirer la voiture de carsOwned de l'utilisateur
+    await UserModel.findByIdAndUpdate(
+      userId,
+      {
+        $pull: { carsOwned: id }
+      },
+      { new: true }
+    );
+
+    res.status(200).json({
+      message: 'Voiture vendue avec succès',
+      data: updatedCar,
+    });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

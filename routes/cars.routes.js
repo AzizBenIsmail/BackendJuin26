@@ -21,6 +21,12 @@ router.get('/:id', carsController.getCarById);
 // UPDATE - Mettre à jour une voiture
 router.put('/:id', carsController.updateCar);
 
+// BUY - Acheter une voiture
+router.post('/:id/buy', carsController.buyCar);
+
+// SELL - Vendre une voiture
+router.post('/:id/sell', carsController.sellCar);
+
 // DELETE - Supprimer une voiture
 router.delete('/:id', carsController.deleteCar);
 
