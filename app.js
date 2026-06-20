@@ -12,6 +12,7 @@ const { connectToDb } = require('./config/mongo.connection');
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users.routes');
 var geminiRouter = require('./routes/gemini.routes');
+var carsRouter = require('./routes/cars.routes');
 
 var app = express();
 
@@ -24,6 +25,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use('/index', indexRouter);
 app.use('/users', usersRouter);
 app.use('/gemini', geminiRouter);
+app.use('/cars', carsRouter);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
