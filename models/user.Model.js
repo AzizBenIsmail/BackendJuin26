@@ -62,6 +62,15 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
+    // Admin 
+    role: {
+      type: String,
+      enum: ["user", "admin"],  
+    },
+    //client 
+    //....
+    //....
+    
     carsOwned: [
       {
         type: mongoose.Schema.Types.ObjectId,
@@ -80,6 +89,18 @@ userSchema.pre("save", async function () {
     throw new Error("Error hashing password: " + error.message);
   }
 });
+
+userSchema.statics.login = async function (email, password) {
+  const user = await this.findOne({ email });
+  if (user) {
+    const auth = await bcrypt.compare(password, user.password);
+    if (auth) {
+      return user;
+    }
+    throw Error("incorrect password");
+  }
+  throw Error("incorrect email");
+}
 
 // Virtual populate pour récupérer les voitures de l'utilisateur
 userSchema.virtual("cars", {

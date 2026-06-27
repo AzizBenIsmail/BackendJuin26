@@ -116,3 +116,27 @@ module.exports.deleteUser = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+
+const jwt = require("jsonwebtoken");
+const maxAge = 2 * 60 * 60 ; //2H
+
+const createToken = (id) => {
+  return jwt.sign({ id }, "net 3Click secret", { expiresIn: maxAge });
+};
+
+module.exports.loginUser = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    const user = await UserModel.login(email, password);
+    const token = createToken(user._id);
+    res.cookie("jwt_token", token, { httpOnly: true, maxAge: maxAge * 1000 });
+    res.status(200).json({ message: 'User logged in successfully', data: user, token });
+  } catch (error) {
+    res.status(401).json({ error: error.message });
+  }
+};
+
+module.exports.logoutUser = (req, res) => {
+  res.cookie("jwt_token", "", { maxAge: 1 });
+  res.status(200).json({ message: 'User logged out successfully' });
+}
